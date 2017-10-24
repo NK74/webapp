@@ -2,9 +2,12 @@
 # Compiled files
 *.tfstate
 *.tfstate.backup
+terraform/*.tfstate.backup
+terraform/*.tfstate
 
 # Module directory
 .terraform/
+
 
 ### Terraform Patch ###
 *.tfvars
