@@ -14,7 +14,7 @@ resource "aws_instance" "webapp" {
   key_name                    = "Valentin"
   associate_public_ip_address = "true"
   subnet_id                   = "subnet-0648dd5d"
-  security_groups             = ["${var.nsg}"]
+  security_groups             = ["${aws_security_group.security-group-webapp.id}"]
 
   tags {
     Name = "WEBAPP-HelloWorld"
@@ -26,7 +26,7 @@ resource "aws_instance" "webapp" {
 resource "aws_security_group" "security-group-webapp" {
   name        = "security-group-webapp"
   description = "Filtrage"
-  vpc_id      = "vpc-8e6738e9"
+  vpc_id      = "vpc-37f8a750"
 
   ingress {
     from_port   = 22
