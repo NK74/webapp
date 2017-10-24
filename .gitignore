@@ -1,14 +1,5 @@
 ### Terraform ###
-# Compiled files
 *.tfstate
 *.tfstate.backup
-terraform/*.tfstate.backup
-terraform/*.tfstate
-
-# Module directory
 .terraform/
-
-
-### Terraform Patch ###
 *.tfvars
-# End of https://www.gitignore.io/api/terraform
