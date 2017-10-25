@@ -27,21 +27,6 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-# DECLARATION INSTANCE
-resource "aws_instance" "webapp" {
-  count                       = "2"
-  ami                         = "ami-785db401"
-  instance_type               = "t2.micro"
-  key_name                    = "Valentin"
-  associate_public_ip_address = "true"
-  subnet_id                   = "${element(data.terraform_remote_state.infrastructure.subnet_all, count.index)}"
-  security_groups             = ["${aws_security_group.security-group-webapp.id}"]
-  user_data                   = "${data.template_file.user_data.rendered}"
-
-  tags {
-    Name = "WEBAPP-${count.index}"
-  }
-}
 
 # DECLARATION SECURITY GROUP
 resource "aws_security_group" "security-group-webapp" {
@@ -96,5 +81,60 @@ resource "aws_elb" "elb" {
     interval            = 5
   }
 
-  instances = ["${aws_instance.webapp.*.id}"]
+  instances = ["${aws_launch_configuration.launchconfig.webapp.*.id}"]
+}
+
+# AUTOSCALING
+
+resource "aws_launch_configuration" "launchconfig" {
+  name          = "webapp"
+  image_id      = "ami-cb4298b2"
+  instance_type = "t2.micro"
+}
+
+resource "aws_autoscaling_policy" "autoscaleup" {
+  name                   = "Groupe auto scaling"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 120
+  autoscaling_group_name = "${aws_autoscaling_group.autoscalegroup.name}"
+}
+
+resource "aws_autoscaling_policy" "autoscaledown" {
+  name                   = "Groupe auto scaling"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 120
+  autoscaling_group_name = "${aws_autoscaling_group.autoscalegroup.name}"
+}
+
+resource "aws_autoscaling_group" "autoscalegroup" {
+  depends_on = ["aws_launch_configuration.launchconfig"]
+vpc_zone_identifier = ["subnet-9dd84cc6", "subnet-9dd84cc6"]
+  availability_zones        = ["eu-west-1a", "eu-west-1b"]
+  name                      = "autoscaling-terraform"
+  max_size                  = 3
+  min_size                  = 2
+  health_check_grace_period = 30
+  health_check_type         = "ELB"
+  force_delete              = true
+  launch_configuration      = "${aws_launch_configuration.launchconfig.name}"
+}
+
+resource "aws_cloudwatch_metric_alarm" "cloudwatchcpu" {
+  alarm_name          = "terraform-test-ALARME"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "80"
+
+  dimensions {
+    AutoScalingGroupName = "${aws_autoscaling_group.autoscalegroup.name}"
+  }
+
+  alarm_description = "This metric monitors ec2 cpu utilization"
+  alarm_actions     = ["${aws_autoscaling_policy.autoscaleup.arn}"]
 }
