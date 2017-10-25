@@ -22,12 +22,12 @@ data "template_file" "user_data" {
   template = "${file("userdata.tpl")}"
 }
 
-# PROVIDER
+# PROVIDER : AWS
 provider "aws" {
   region = "eu-west-1"
 }
 
-# INSTANCE
+# DECLARATION INSTANCE
 resource "aws_instance" "webapp" {
   count                       = "2"
   ami                         = "ami-785db401"
@@ -43,7 +43,7 @@ resource "aws_instance" "webapp" {
   }
 }
 
-# SECU GROUP
+# DECLARATION SECURITY GROUP
 resource "aws_security_group" "security-group-webapp" {
   name        = "security-group-webapp"
   description = "Filtrage"
@@ -75,7 +75,7 @@ resource "aws_security_group" "security-group-webapp" {
   }
 }
 
-# CREATION ELB
+# DECLARATION ELB
 resource "aws_elb" "elb" {
   name            = "elb-infra"
   subnets         = ["${data.terraform_remote_state.infrastructure.subnet_all}"]
